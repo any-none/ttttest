@@ -1,11 +1,12 @@
 # Codex 远程注册机
 
-基于 Browserbase 远程浏览器服务、DDG 邮箱别名服务、catch-all alias 邮箱模式和 CPA 自动上传的 Codex Token 自动注册工具。
+基于 Browserbase 远程浏览器服务、DDG 邮箱别名服务、Gmail plus alias、catch-all alias 邮箱模式和 CPA 自动上传的 Codex Token 自动注册工具。
 
 ## 功能特点
 
 - 🌐 **远程浏览器**: 使用 Browserbase 提供的远程浏览器服务，无需本地浏览器，不会被风控
 - 📧 **DDG 邮箱别名**: 使用 DuckDuckGo 的邮箱别名服务生成临时邮箱
+- 📮 **Gmail Plus Alias**: 支持基于固定 Gmail 地址自动生成 `+abc` / `+a3d` 形式别名
 - 📨 **Catch-all Alias 邮箱**: 支持本地生成前缀并拼接自定义域名，无需调用 DDG
 - ☁️ **CPA 自动上传**: token 本地保存后自动上传到 CPA，失败会重试
 - 🔄 **两阶段注册**:
@@ -15,7 +16,8 @@
 ## 环境要求
 
 - Node.js 18+
-- 有效的 DDG Token（仅在未开启 catch-all alias 模式时需要）
+- 有效的 DDG Token（仅在默认模式且未开启 catch-all alias 模式时需要）
+- 有效的 Gmail 地址（仅在 `gmail` 模式下需要）
 - 可访问的邮箱收件箱 URL
 - 可访问的 CPA 管理接口 URL 与 API Key
 
@@ -32,6 +34,7 @@ npm install
 ```json
 {
   "ddgToken": "",
+  "gmailEmail": "",
   "mailInboxUrl": "",
   "oauthClientId": "app_EMoamEEZ73f0CkXaXp7hrann",
   "oauthRedirectPort": 1455,
@@ -46,7 +49,8 @@ npm install
 
 | 字段 | 说明 | 必填 |
 |------|------|------|
-| `ddgToken` | DDG 邮箱别名服务的 Bearer Token | `aliasEmailEnabled=false` 时必填 |
+| `ddgToken` | DDG 邮箱别名服务的 Bearer Token | 默认模式且 `aliasEmailEnabled=false` 时必填 |
+| `gmailEmail` | Gmail 基础邮箱，例如 `lokiwanglokiwang@gmail.com` | `gmail` 模式时必填 |
 | `mailInboxUrl` | 可被 Browserbase 访问的邮箱收件箱 URL（带 JWT） | ✅ |
 | `oauthClientId` | OAuth 客户端 ID | ❌ 默认即可 |
 | `oauthRedirectPort` | 本地回调端口 | ❌ 默认 1455 （其实根本不会使用） |
@@ -61,11 +65,21 @@ npm install
 - 验证码读取方式不变，依然通过 `mailInboxUrl` 打开的收件箱页面获取
 - 当 `aliasEmailEnabled=false` 时，程序保持原有 DDG alias 生成逻辑
 
+### Gmail 模式说明
+
+- 当命令行第三个参数为 `gmail` 时，程序会优先使用 Gmail 模式
+- Gmail 模式会读取 `gmailEmail` 或环境变量 `GMAIL_EMAIL`
+- 别名生成规则为 `基础邮箱本地部分+3或4位字母数字@gmail.com`
+- 例如 `lokiwanglokiwang@gmail.com` 会生成 `lokiwanglokiwang+abc@gmail.com`
+- 为兼容历史输入，`gamil` 也会被当作 `gmail` 处理
+- 除了邮箱生成方式不同，验证码读取、注册、OAuth、token 落盘、CPA 上传逻辑全部保持一致
+
 ### 环境变量覆盖
 
 运行时优先读取环境变量，其次才读取 `config.json`：
 
 - `DDG_TOKEN`
+- `GMAIL_EMAIL`
 - `MAIL_INBOX_URL`
 - `CPA_URL`
 - `CPA_KEY`
@@ -83,6 +97,16 @@ export CPA_KEY='your-cpa-key'
 export ALIAS_EMAIL_ENABLED='true'
 export ALIAS_EMAIL_DOMAIN='lllooolll.aleeas.com'
 node index.js 1
+```
+
+Gmail 模式示例：
+
+```bash
+export GMAIL_EMAIL='lokiwanglokiwang@gmail.com'
+export MAIL_INBOX_URL='https://your-mail-inbox-url.com/?jwt=...'
+export CPA_URL='https://cpa.example.com'
+export CPA_KEY='your-cpa-key'
+node index.js 10 gmail
 ```
 
 ### CPA 上传说明
@@ -191,11 +215,30 @@ node index.js 1
 node index.js 5  # 注册 5 个账户
 ```
 
+### Gmail 模式
+
+```bash
+node index.js 10 gmail
+```
+
+或兼容旧写法：
+
+```bash
+node index.js 10 gamil
+```
+
+### GitHub Actions
+
+- workflow 默认模式已经改为 `gmail`
+- workflow 默认注册数量已经改为 `50`
+- 仓库需要配置 `GMAIL_EMAIL` secret
+- 手动触发时也可以覆盖默认输入，例如把模式切回 `default`
+
 ## 工作流程
 
 ### 第一阶段：ChatGPT 注册
 
-1. 根据配置生成邮箱地址（DDG alias 或 catch-all alias）
+1. 根据配置和命令行模式生成邮箱地址（DDG alias、Gmail alias 或 catch-all alias）
 2. 创建 Browserbase 会话
 3. 发送 Agent 任务到远程浏览器
 4. 监控页面 URL 变化，等待到达完成页面
@@ -272,11 +315,13 @@ Browserbase 服务使用的是公开的 Gemini 浏览器服务，如果连接失
 
 - Workflow 名称：`Manual Register`
 - 触发方式：`workflow_dispatch`
-- 输入参数：`count`
+- 输入参数：`count`、`mode`
+- 当前默认值：`count=50`、`mode=gmail`
 
 在 GitHub 仓库中配置以下 Secrets 后，可手动触发真实注册：
 
 - `DDG_TOKEN`
+- `GMAIL_EMAIL`
 - `MAIL_INBOX_URL`
 - `CPA_URL`
 - `CPA_KEY`
