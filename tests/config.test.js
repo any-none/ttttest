@@ -12,7 +12,10 @@ test('prefers environment variables over config file values', () => {
             cpaKey: 'file-cpa-key',
             aliasEmailEnabled: false,
             aliasEmailDomain: 'file.example.com',
-            gmailEmail: 'file@gmail.com'
+            gmailEmail: 'file@gmail.com',
+            registrationTargets: [
+                { gmailEmail: 'config@example.com', mailInboxUrl: 'https://config.example.com' }
+            ]
         },
         {
             DDG_TOKEN: 'env-ddg',
@@ -21,7 +24,11 @@ test('prefers environment variables over config file values', () => {
             CPA_KEY: 'env-cpa-key',
             ALIAS_EMAIL_ENABLED: 'true',
             ALIAS_EMAIL_DOMAIN: 'env.example.com',
-            GMAIL_EMAIL: 'env@gmail.com'
+            GMAIL_EMAIL: 'env@gmail.com',
+            REGISTRATION_TARGETS_JSON: JSON.stringify([
+                { gmailEmail: 'env1@example.com', mailInboxUrl: 'https://env1.example.com' },
+                { gmailEmail: 'env2@example.com', mailInboxUrl: 'https://env2.example.com' }
+            ])
         }
     );
 
@@ -32,6 +39,10 @@ test('prefers environment variables over config file values', () => {
     assert.equal(config.aliasEmailEnabled, true);
     assert.equal(config.aliasEmailDomain, 'env.example.com');
     assert.equal(config.gmailEmail, 'env@gmail.com');
+    assert.deepEqual(config.registrationTargets, [
+        { gmailEmail: 'env1@example.com', mailInboxUrl: 'https://env1.example.com' },
+        { gmailEmail: 'env2@example.com', mailInboxUrl: 'https://env2.example.com' }
+    ]);
 });
 
 test('falls back to config file values when environment variables are absent', () => {
@@ -43,7 +54,10 @@ test('falls back to config file values when environment variables are absent', (
             cpaKey: 'file-cpa-key',
             aliasEmailEnabled: false,
             aliasEmailDomain: 'file.example.com',
-            gmailEmail: 'file@gmail.com'
+            gmailEmail: 'file@gmail.com',
+            registrationTargets: [
+                { gmailEmail: 'config@example.com', mailInboxUrl: 'https://config.example.com' }
+            ]
         },
         {}
     );
@@ -55,4 +69,7 @@ test('falls back to config file values when environment variables are absent', (
     assert.equal(config.aliasEmailEnabled, false);
     assert.equal(config.aliasEmailDomain, 'file.example.com');
     assert.equal(config.gmailEmail, 'file@gmail.com');
+    assert.deepEqual(config.registrationTargets, [
+        { gmailEmail: 'config@example.com', mailInboxUrl: 'https://config.example.com' }
+    ]);
 });

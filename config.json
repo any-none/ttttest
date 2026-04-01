@@ -6,6 +6,7 @@
   "oauthRedirectPort": 1455,
   "aliasEmailEnabled": false,
   "aliasEmailDomain": "lllooolll.aleeas.com",
+  "registrationTargets": [],
   "cpaUrl": "",
   "cpaKey": ""
 }

@@ -1,5 +1,9 @@
 const path = require('path');
 const fs = require('fs');
+const {
+    normalizeRegistrationTargets,
+    parseRegistrationTargetsJson,
+} = require('./registrationTargets');
 
 const configPath = path.join(__dirname, '..', 'config.json');
 
@@ -32,6 +36,14 @@ function loadConfig(filePath = configPath) {
 }
 
 function normalizeConfig(rawConfig = {}) {
+    let registrationTargets = [];
+
+    if (typeof rawConfig.registrationTargets === 'string') {
+        registrationTargets = parseRegistrationTargetsJson(rawConfig.registrationTargets);
+    } else {
+        registrationTargets = normalizeRegistrationTargets(rawConfig.registrationTargets);
+    }
+
     return {
         ddgToken: rawConfig.ddgToken,
         gmailEmail: rawConfig.gmailEmail || '',
@@ -40,6 +52,7 @@ function normalizeConfig(rawConfig = {}) {
         oauthRedirectPort: parseInt(rawConfig.oauthRedirectPort, 10) || 1455,
         aliasEmailEnabled: normalizeBoolean(rawConfig.aliasEmailEnabled),
         aliasEmailDomain: rawConfig.aliasEmailDomain || '',
+        registrationTargets,
         cpaUrl: rawConfig.cpaUrl || '',
         cpaKey: rawConfig.cpaKey || '',
     };
@@ -54,6 +67,7 @@ function resolveConfig(rawConfig = loadConfig(), env = process.env) {
         oauthRedirectPort: getOverrideValue(env, 'OAUTH_REDIRECT_PORT', rawConfig.oauthRedirectPort),
         aliasEmailEnabled: getOverrideValue(env, 'ALIAS_EMAIL_ENABLED', rawConfig.aliasEmailEnabled),
         aliasEmailDomain: getOverrideValue(env, 'ALIAS_EMAIL_DOMAIN', rawConfig.aliasEmailDomain),
+        registrationTargets: getOverrideValue(env, 'REGISTRATION_TARGETS_JSON', rawConfig.registrationTargets),
         cpaUrl: getOverrideValue(env, 'CPA_URL', rawConfig.cpaUrl),
         cpaKey: getOverrideValue(env, 'CPA_KEY', rawConfig.cpaKey),
     });
@@ -81,6 +95,9 @@ module.exports = {
     // Catch-all Alias Email
     aliasEmailEnabled: config.aliasEmailEnabled,
     aliasEmailDomain: config.aliasEmailDomain,
+
+    // Registration Targets
+    registrationTargets: config.registrationTargets,
 
     // CPA Upload
     cpaUrl: config.cpaUrl,

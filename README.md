@@ -8,6 +8,7 @@
 - 📧 **DDG 邮箱别名**: 使用 DuckDuckGo 的邮箱别名服务生成临时邮箱
 - 📮 **Gmail Plus Alias**: 支持基于固定 Gmail 地址自动生成 `+abc` / `+a3d` 形式别名
 - 📨 **Catch-all Alias 邮箱**: 支持本地生成前缀并拼接自定义域名，无需调用 DDG
+- 🧩 **动态目标池并发**: 支持配置任意数量的 Gmail / Inbox 组合，GitHub Actions 会自动按配置数量展开矩阵并发
 - ☁️ **CPA 自动上传**: token 本地保存后自动上传到 CPA，失败会重试
 - 🔄 **两阶段注册**:
   - 第一阶段：ChatGPT 账户注册
@@ -40,6 +41,7 @@ npm install
   "oauthRedirectPort": 1455,
   "aliasEmailEnabled": false,
   "aliasEmailDomain": "lllooolll.aleeas.com",
+  "registrationTargets": [],
   "cpaUrl": "",
   "cpaKey": ""
 }
@@ -56,6 +58,7 @@ npm install
 | `oauthRedirectPort` | 本地回调端口 | ❌ 默认 1455 （其实根本不会使用） |
 | `aliasEmailEnabled` | 是否启用 catch-all alias 邮箱模式 | ❌ 默认 `false` |
 | `aliasEmailDomain` | catch-all alias 邮箱域名，例如 `lllooolll.aleeas.com` | `aliasEmailEnabled=true` 时必填 |
+| `registrationTargets` | 多套收件箱/邮箱配置数组，每项包含 `gmailEmail` 与 `mailInboxUrl` | ❌ |
 | `cpaUrl` | CPA 管理平台地址，支持根地址或完整 auth-files 地址 | ✅ |
 | `cpaKey` | CPA 管理平台 Bearer Key | ✅ |
 
@@ -69,10 +72,18 @@ npm install
 
 - 当命令行第三个参数为 `gmail` 时，程序会优先使用 Gmail 模式
 - Gmail 模式会读取 `gmailEmail` 或环境变量 `GMAIL_EMAIL`
-- 别名生成规则为 `基础邮箱本地部分+3或4位字母数字@gmail.com`
+- 别名生成规则为 `基础邮箱本地部分+3或4位字母数字@原域名`
 - 例如 `lokiwanglokiwang@gmail.com` 会生成 `lokiwanglokiwang+abc@gmail.com`
 - 为兼容历史输入，`gamil` 也会被当作 `gmail` 处理
 - 除了邮箱生成方式不同，验证码读取、注册、OAuth、token 落盘、CPA 上传逻辑全部保持一致
+
+### 动态目标池说明
+
+- `registrationTargets` 用来描述多套隔离的邮箱配置，每一项都必须有独立的 `mailInboxUrl`
+- 每个 GitHub Actions matrix job 只会选择其中一套配置，避免多个并发 job 共享同一个 inbox 导致串码
+- workflow 输入的 `count` 表示总注册数，不是单个 job 的注册数
+- 当存在多套目标时，workflow 会自动把总数尽量平均分配到每个 slot
+- 例如 `count=50` 且有 5 套目标时，会自动拆成 5 个并发 job，每个 job 处理 10 个账号
 
 ### 环境变量覆盖
 
@@ -85,6 +96,7 @@ npm install
 - `CPA_KEY`
 - `ALIAS_EMAIL_ENABLED`
 - `ALIAS_EMAIL_DOMAIN`
+- `REGISTRATION_TARGETS_JSON`
 - `OAUTH_CLIENT_ID`
 - `OAUTH_REDIRECT_PORT`
 
@@ -107,6 +119,23 @@ export MAIL_INBOX_URL='https://your-mail-inbox-url.com/?jwt=...'
 export CPA_URL='https://cpa.example.com'
 export CPA_KEY='your-cpa-key'
 node index.js 10 gmail
+```
+
+本地目标池示例：
+
+```json
+{
+  "registrationTargets": [
+    {
+      "gmailEmail": "slot1@gmail.com",
+      "mailInboxUrl": "https://tmpmail.example.com/?jwt=slot1"
+    },
+    {
+      "gmailEmail": "slot2@gmail.com",
+      "mailInboxUrl": "https://tmpmail.example.com/?jwt=slot2"
+    }
+  ]
+}
 ```
 
 ### CPA 上传说明
@@ -231,14 +260,15 @@ node index.js 10 gamil
 
 - workflow 默认模式已经改为 `gmail`
 - workflow 默认注册数量已经改为 `50`
-- 仓库需要配置 `GMAIL_EMAIL` secret
+- workflow 会优先读取 `REGISTRATION_TARGETS_JSON`，并按目标数量自动展开 matrix 并发
 - 手动触发时也可以覆盖默认输入，例如把模式切回 `default`
+- 如果没有配置 `REGISTRATION_TARGETS_JSON`，则会退回到单套 `GMAIL_EMAIL` / `MAIL_INBOX_URL` 的旧模式
 
 ## 工作流程
 
 ### 第一阶段：ChatGPT 注册
 
-1. 根据配置和命令行模式生成邮箱地址（DDG alias、Gmail alias 或 catch-all alias）
+1. 根据配置和命令行模式生成邮箱地址（DDG alias、plus alias 或 catch-all alias）
 2. 创建 Browserbase 会话
 3. 发送 Agent 任务到远程浏览器
 4. 监控页面 URL 变化，等待到达完成页面
@@ -307,7 +337,7 @@ Browserbase 服务使用的是公开的 Gemini 浏览器服务，如果连接失
 - ⚠️ DDG Token 具有时效性，过期后需要重新获取
 - ⚠️ 请合理使用，避免频繁注册触发风控
 - ⚠️ 仓库中的 `config.json` 已脱敏，请使用环境变量或本地修改后的文件填入真实值
-- ⚠️ GitHub Actions 需要在仓库 Secrets 中配置 `DDG_TOKEN`、`MAIL_INBOX_URL`、`CPA_URL`、`CPA_KEY`
+- ⚠️ GitHub Actions 建议优先配置 `REGISTRATION_TARGETS_JSON`，让每个并发 job 使用独立 inbox，避免串码
 
 ## GitHub Actions
 
@@ -317,12 +347,14 @@ Browserbase 服务使用的是公开的 Gemini 浏览器服务，如果连接失
 - 触发方式：`workflow_dispatch`
 - 输入参数：`count`、`mode`
 - 当前默认值：`count=50`、`mode=gmail`
+- 当配置了 `REGISTRATION_TARGETS_JSON` 时，workflow 会自动生成 matrix 并发
 
 在 GitHub 仓库中配置以下 Secrets 后，可手动触发真实注册：
 
 - `DDG_TOKEN`
 - `GMAIL_EMAIL`
 - `MAIL_INBOX_URL`
+- `REGISTRATION_TARGETS_JSON`
 - `CPA_URL`
 - `CPA_KEY`
 

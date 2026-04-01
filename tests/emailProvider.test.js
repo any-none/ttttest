@@ -53,7 +53,7 @@ test('uses DDG alias generation when alias mode is disabled', async () => {
     assert.equal(provider.getEmail(), 'duck-alias@duck.com');
 });
 
-test('generates a gmail plus alias when gmail mode is enabled', async () => {
+test('generates a plus alias when gmail mode is enabled', async () => {
     let ddgCalls = 0;
     const provider = new ConfigurableEmailProvider(
         {
@@ -85,6 +85,31 @@ test('generates a gmail plus alias when gmail mode is enabled', async () => {
     assert.equal(email, 'lokiwanglokiwang+abc@gmail.com');
     assert.equal(provider.getEmail(), email);
     assert.equal(ddgCalls, 0);
+});
+
+test('preserves the configured domain when generating a plus alias', async () => {
+    const provider = new ConfigurableEmailProvider(
+        {
+            aliasEmailEnabled: false,
+            aliasEmailDomain: '',
+            ddgToken: 'unused-token',
+            gmailEmail: 'lokiwanglokiwang@gmai.com'
+        },
+        {
+            emailMode: 'gmail',
+            randomBytes: (size) => {
+                if (size === 1) {
+                    return Buffer.from([1]);
+                }
+
+                return Buffer.from([0, 1, 26, 27]);
+            }
+        }
+    );
+
+    const email = await provider.generateAlias();
+
+    assert.equal(email, 'lokiwanglokiwang+ab01@gmai.com');
 });
 
 test('throws a clear error when alias mode is enabled without a domain', async () => {

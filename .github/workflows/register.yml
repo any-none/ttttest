@@ -13,12 +13,44 @@ on:
         default: "gmail"
 
 jobs:
-  register:
+  prepare-matrix:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
+      REGISTRATION_TARGETS_JSON: ${{ secrets.REGISTRATION_TARGETS_JSON }}
+      GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+      MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
+    outputs:
+      matrix: ${{ steps.prepare.outputs.matrix }}
+      target_count: ${{ steps.prepare.outputs.target_count }}
+      job_count: ${{ steps.prepare.outputs.job_count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare registration matrix
+        id: prepare
+        run: node scripts/build-action-matrix.js "${{ inputs.count }}" "${{ inputs.mode }}"
+
+  register:
+    needs: prepare-matrix
+    if: ${{ needs.prepare-matrix.outputs.job_count != '0' }}
+    name: register / slot ${{ matrix.slotNumber }} / count ${{ matrix.assignedCount }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    env:
       DDG_TOKEN: ${{ secrets.DDG_TOKEN }}
+      REGISTRATION_TARGETS_JSON: ${{ secrets.REGISTRATION_TARGETS_JSON }}
       GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
       MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
       CPA_URL: ${{ secrets.CPA_URL }}
@@ -39,6 +71,7 @@ jobs:
         shell: bash
         run: |
           echo "::add-mask::${DDG_TOKEN}"
+          echo "::add-mask::${REGISTRATION_TARGETS_JSON}"
           echo "::add-mask::${GMAIL_EMAIL}"
           echo "::add-mask::${MAIL_INBOX_URL}"
           echo "::add-mask::${CPA_URL}"
@@ -49,6 +82,9 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Select registration target
+        run: node scripts/export-registration-target.js "${{ matrix.targetIndex }}" "${{ inputs.mode }}"
 
       - name: Validate required secrets
         shell: bash
@@ -61,4 +97,4 @@ jobs:
           fi
 
       - name: Register And Upload
-        run: node index.js "${{ inputs.count }}" "${{ inputs.mode }}"
+        run: node index.js "${{ matrix.assignedCount }}" "${{ inputs.mode }}"

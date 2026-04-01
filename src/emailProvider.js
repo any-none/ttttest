@@ -44,16 +44,17 @@ class ConfigurableEmailProvider {
             throw new Error('gmailEmail is required when emailMode=gmail');
         }
 
-        const match = String(this.providerConfig.gmailEmail).trim().match(/^([^@\s]+)@gmail\.com$/i);
+        const match = String(this.providerConfig.gmailEmail).trim().match(/^([^@\s]+)@([^@\s]+\.[^@\s]+)$/i);
         if (!match) {
-            throw new Error('gmailEmail must be a valid @gmail.com address');
+            throw new Error('gmailEmail must be a valid email address');
         }
 
         const baseLocalPart = match[1].split('+')[0];
+        const domain = match[2];
         const suffixLength = 3 + (this.randomBytes(1)[0] % 2);
         const suffix = this.generateRandomAlphaNumeric(suffixLength);
 
-        return `${baseLocalPart}+${suffix}@gmail.com`;
+        return `${baseLocalPart}+${suffix}@${domain}`;
     }
 
     async generateAlias() {
