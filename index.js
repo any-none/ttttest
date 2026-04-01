@@ -11,11 +11,13 @@ const { isActiveTokenFilename } = require('./src/tokenFiles');
 const { uploadAuthFile } = require('./src/cpaUploader');
 const { resolveTargetCount } = require('./src/targetCount');
 const { maskEmailForLog } = require('./src/logSanitizer');
+const { resolveEmailMode } = require('./src/emailMode');
 
 installConsoleSanitizer(config);
 
 // 目标生成数量
 const TARGET_COUNT = resolveTargetCount(process.argv);
+const EMAIL_MODE = resolveEmailMode(process.argv);
 
 function isMissionAccomplishedUrl(url) {
     return typeof url === 'string'
@@ -199,7 +201,9 @@ async function runSingleRegistration() {
     console.log('[主程序] 开始一次全新的注册与授权流程');
     console.log('=========================================');
     
-    const emailProvider = new ConfigurableEmailProvider();
+    const emailProvider = new ConfigurableEmailProvider(config, {
+        emailMode: EMAIL_MODE
+    });
     const browserbase = new BrowserbaseService();
     const oauthService = new OAuthService();
     
@@ -272,10 +276,13 @@ function archiveExistingTokens() {
  */
 async function startBatch() {
     console.log(`[启动] 开始执行 Codex 远程注册机，目标生成数量: ${TARGET_COUNT}`);
+    console.log(`[启动] 当前邮箱模式: ${EMAIL_MODE}`);
     
     // 检查配置
     try {
-        validateRuntimeConfig(config);
+        validateRuntimeConfig(config, {
+            emailMode: EMAIL_MODE
+        });
     } catch (error) {
         console.error(`[错误] ${error.message}，请检查 config.json 文件`);
         process.exit(1);

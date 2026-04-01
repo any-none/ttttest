@@ -34,6 +34,7 @@ function loadConfig(filePath = configPath) {
 function normalizeConfig(rawConfig = {}) {
     return {
         ddgToken: rawConfig.ddgToken,
+        gmailEmail: rawConfig.gmailEmail || '',
         mailInboxUrl: rawConfig.mailInboxUrl,
         oauthClientId: rawConfig.oauthClientId || 'app_EMoamEEZ73f0CkXaXp7hrann',
         oauthRedirectPort: parseInt(rawConfig.oauthRedirectPort, 10) || 1455,
@@ -47,6 +48,7 @@ function normalizeConfig(rawConfig = {}) {
 function resolveConfig(rawConfig = loadConfig(), env = process.env) {
     return normalizeConfig({
         ddgToken: getOverrideValue(env, 'DDG_TOKEN', rawConfig.ddgToken),
+        gmailEmail: getOverrideValue(env, 'GMAIL_EMAIL', rawConfig.gmailEmail),
         mailInboxUrl: getOverrideValue(env, 'MAIL_INBOX_URL', rawConfig.mailInboxUrl),
         oauthClientId: getOverrideValue(env, 'OAUTH_CLIENT_ID', rawConfig.oauthClientId),
         oauthRedirectPort: getOverrideValue(env, 'OAUTH_REDIRECT_PORT', rawConfig.oauthRedirectPort),
@@ -65,6 +67,9 @@ module.exports = {
     resolveConfig,
     // DDG Email Alias
     ddgToken: config.ddgToken,
+
+    // Gmail Plus Alias
+    gmailEmail: config.gmailEmail,
     
     // Mail Inbox
     mailInboxUrl: config.mailInboxUrl,

@@ -7,6 +7,10 @@ on:
         description: Number of accounts to register
         required: true
         default: "10"
+      mode:
+        description: Email mode (default or gmail)
+        required: false
+        default: "default"
 
 jobs:
   register:
@@ -15,6 +19,7 @@ jobs:
       contents: read
     env:
       DDG_TOKEN: ${{ secrets.DDG_TOKEN }}
+      GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
       MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
       CPA_URL: ${{ secrets.CPA_URL }}
       CPA_KEY: ${{ secrets.CPA_KEY }}
@@ -34,6 +39,7 @@ jobs:
         shell: bash
         run: |
           echo "::add-mask::${DDG_TOKEN}"
+          echo "::add-mask::${GMAIL_EMAIL}"
           echo "::add-mask::${MAIL_INBOX_URL}"
           echo "::add-mask::${CPA_URL}"
           echo "::add-mask::${CPA_KEY}"
@@ -50,6 +56,9 @@ jobs:
           test -n "${MAIL_INBOX_URL}" || { echo "MAIL_INBOX_URL is required"; exit 1; }
           test -n "${CPA_URL}" || { echo "CPA_URL is required"; exit 1; }
           test -n "${CPA_KEY}" || { echo "CPA_KEY is required"; exit 1; }
+          if [ "${{ inputs.mode }}" = "gmail" ]; then
+            test -n "${GMAIL_EMAIL}" || { echo "GMAIL_EMAIL is required when mode=gmail"; exit 1; }
+          fi
 
       - name: Register And Upload
-        run: node index.js "${{ inputs.count }}"
+        run: node index.js "${{ inputs.count }}" "${{ inputs.mode }}"

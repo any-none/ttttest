@@ -1,4 +1,4 @@
-function validateRuntimeConfig(config) {
+function validateRuntimeConfig(config, options = {}) {
     if (!config.mailInboxUrl) {
         throw new Error('mailInboxUrl is required');
     }
@@ -9,6 +9,14 @@ function validateRuntimeConfig(config) {
 
     if (!config.cpaKey) {
         throw new Error('cpaKey is required');
+    }
+
+    if (options.emailMode === 'gmail') {
+        if (!config.gmailEmail) {
+            throw new Error('gmailEmail is required when emailMode=gmail');
+        }
+
+        return true;
     }
 
     if (config.aliasEmailEnabled) {
