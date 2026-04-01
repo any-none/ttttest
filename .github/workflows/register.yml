@@ -17,10 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      REGISTRATION_TARGETS_JSON: ${{ secrets.REGISTRATION_TARGETS_JSON }}
-      GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
-      MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
     outputs:
       matrix: ${{ steps.prepare.outputs.matrix }}
       target_count: ${{ steps.prepare.outputs.target_count }}
@@ -34,8 +30,17 @@ jobs:
         with:
           node-version: 22
 
+      - name: Materialize registration targets
+        env:
+          REGISTRATION_TARGETS_JSON: ${{ secrets.REGISTRATION_TARGETS_JSON }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
+        run: node scripts/materialize-registration-targets.js .codex-runtime/registration-targets.json
+
       - name: Prepare registration matrix
         id: prepare
+        env:
+          REGISTRATION_TARGETS_FILE: .codex-runtime/registration-targets.json
         run: node scripts/build-action-matrix.js "${{ inputs.count }}" "${{ inputs.mode }}"
 
   register:
@@ -50,9 +55,6 @@ jobs:
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     env:
       DDG_TOKEN: ${{ secrets.DDG_TOKEN }}
-      REGISTRATION_TARGETS_JSON: ${{ secrets.REGISTRATION_TARGETS_JSON }}
-      GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
-      MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
       CPA_URL: ${{ secrets.CPA_URL }}
       CPA_KEY: ${{ secrets.CPA_KEY }}
       OAUTH_CLIENT_ID: "app_EMoamEEZ73f0CkXaXp7hrann"
@@ -71,9 +73,6 @@ jobs:
         shell: bash
         run: |
           echo "::add-mask::${DDG_TOKEN}"
-          echo "::add-mask::${REGISTRATION_TARGETS_JSON}"
-          echo "::add-mask::${GMAIL_EMAIL}"
-          echo "::add-mask::${MAIL_INBOX_URL}"
           echo "::add-mask::${CPA_URL}"
           echo "::add-mask::${CPA_KEY}"
 
@@ -83,7 +82,16 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Materialize registration targets
+        env:
+          REGISTRATION_TARGETS_JSON: ${{ secrets.REGISTRATION_TARGETS_JSON }}
+          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
+          MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
+        run: node scripts/materialize-registration-targets.js .codex-runtime/registration-targets.json
+
       - name: Select registration target
+        env:
+          REGISTRATION_TARGETS_FILE: .codex-runtime/registration-targets.json
         run: node scripts/export-registration-target.js "${{ matrix.targetIndex }}" "${{ inputs.mode }}"
 
       - name: Validate required secrets

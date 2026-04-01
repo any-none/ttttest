@@ -29,6 +29,35 @@ test('prefers REGISTRATION_TARGETS_JSON over config registration targets', () =>
     });
 });
 
+test('reads registration targets from REGISTRATION_TARGETS_FILE when provided', () => {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+
+    const tempFile = path.join(os.tmpdir(), `registration-targets-${Date.now()}.json`);
+    fs.writeFileSync(tempFile, JSON.stringify([
+        { gmailEmail: 'file@example.com', mailInboxUrl: 'https://file.example.com' }
+    ]));
+
+    const targets = resolveRegistrationTargets(
+        {
+            registrationTargets: [
+                { gmailEmail: 'config@example.com', mailInboxUrl: 'https://config.example.com' }
+            ]
+        },
+        {
+            REGISTRATION_TARGETS_FILE: tempFile
+        }
+    );
+
+    assert.deepEqual(targets, [
+        {
+            gmailEmail: 'file@example.com',
+            mailInboxUrl: 'https://file.example.com'
+        }
+    ]);
+});
+
 test('falls back to config registration targets when env secret is absent', () => {
     const targets = resolveRegistrationTargets(
         {

@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 function normalizeRegistrationTarget(target = {}) {
     return {
         gmailEmail: String(target.gmailEmail || '').trim(),
@@ -26,9 +28,21 @@ function parseRegistrationTargetsJson(value) {
     return normalizeRegistrationTargets(parsed);
 }
 
+function parseRegistrationTargetsFile(filePath) {
+    if (!filePath || !fs.existsSync(filePath)) {
+        return [];
+    }
+
+    return parseRegistrationTargetsJson(fs.readFileSync(filePath, 'utf8'));
+}
+
 function resolveRegistrationTargets(config = {}, env = process.env) {
     if (env.REGISTRATION_TARGETS_JSON) {
         return parseRegistrationTargetsJson(env.REGISTRATION_TARGETS_JSON);
+    }
+
+    if (env.REGISTRATION_TARGETS_FILE) {
+        return parseRegistrationTargetsFile(env.REGISTRATION_TARGETS_FILE);
     }
 
     if (env.GMAIL_EMAIL || env.MAIL_INBOX_URL) {
@@ -105,6 +119,7 @@ module.exports = {
     getRegistrationTarget,
     normalizeRegistrationTarget,
     normalizeRegistrationTargets,
+    parseRegistrationTargetsFile,
     parseRegistrationTargetsJson,
     resolveRegistrationTargets,
     validateRegistrationTarget,
