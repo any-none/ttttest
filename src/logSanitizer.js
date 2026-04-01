@@ -2,6 +2,16 @@ function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function maskEmailForLog(input) {
+    return String(input ?? '').replace(
+        /\b([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\.[A-Za-z]{2,})(?!\.[A-Za-z0-9])/g,
+        (_, localPart, domain) => {
+            const visibleChars = localPart.length <= 3 ? 1 : 3;
+            return `${localPart.slice(0, visibleChars)}***@${domain}`;
+        }
+    );
+}
+
 function sanitizeForLog(input, secrets = {}) {
     let output = String(input ?? '');
 
@@ -22,6 +32,7 @@ function sanitizeForLog(input, secrets = {}) {
     output = output.replace(/(code=)[^&\s"'`]+/gi, '$1[REDACTED]');
     output = output.replace(/(state=)[^&\s"'`]+/gi, '$1[REDACTED]');
     output = output.replace(/Bearer\s+([A-Za-z0-9._-]+)/gi, 'Bearer [REDACTED]');
+    output = maskEmailForLog(output);
 
     return output;
 }
@@ -68,6 +79,7 @@ function installConsoleSanitizer(secrets = {}) {
 }
 
 module.exports = {
+    maskEmailForLog,
     sanitizeForLog,
     installConsoleSanitizer,
 };

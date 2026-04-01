@@ -1,5 +1,6 @@
 const axios = require('axios');
 const config = require('./config');
+const { maskEmailForLog } = require('./logSanitizer');
 
 class DDGEmailProvider {
     constructor(providerConfig = config, deps = {}) {
@@ -29,7 +30,7 @@ class DDGEmailProvider {
             const address = response.data.address;
             this.emailAddress = `${address}@duck.com`;
             
-            console.log('[DDG] 已生成邮箱别名');
+            console.log(`[DDG] 已生成邮箱别名: ${maskEmailForLog(this.emailAddress)}`);
             return this.emailAddress;
         } catch (error) {
             console.error('[DDG] 生成邮箱别名失败:', error.message);

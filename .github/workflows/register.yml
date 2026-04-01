@@ -6,7 +6,7 @@ on:
       count:
         description: Number of accounts to register
         required: true
-        default: "1"
+        default: "10"
 
 jobs:
   register:

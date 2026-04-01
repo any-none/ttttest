@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
+const { maskEmailForLog } = require('./logSanitizer');
 
 function sanitizeTokenFilenameSegment(value) {
     return String(value).replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
@@ -155,7 +156,7 @@ class OAuthService {
             const filepath = path.join(outputDir, filename);
             fs.writeFileSync(filepath, JSON.stringify(outData, null, 2));
 
-            console.log('[OAuth] Token 已保存到本地 tokens 目录');
+            console.log(`[OAuth] Token 已保存到本地 tokens 目录，对应邮箱: ${maskEmailForLog(email)}`);
             return {
                 ...outData,
                 savedFilepath: filepath,

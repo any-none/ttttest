@@ -2,6 +2,7 @@ const { randomBytes } = require('node:crypto');
 
 const config = require('./config');
 const { DDGEmailProvider } = require('./ddgProvider');
+const { maskEmailForLog } = require('./logSanitizer');
 
 class ConfigurableEmailProvider {
     constructor(providerConfig = config, deps = {}) {
@@ -26,7 +27,7 @@ class ConfigurableEmailProvider {
     async generateAlias() {
         if (this.providerConfig.aliasEmailEnabled) {
             this.emailAddress = this.generateLocalAlias();
-            console.log('[Email] 已生成 catch-all alias 邮箱');
+            console.log(`[Email] 已生成 catch-all alias 邮箱: ${maskEmailForLog(this.emailAddress)}`);
             return this.emailAddress;
         }
 

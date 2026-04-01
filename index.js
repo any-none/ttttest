@@ -9,11 +9,13 @@ const { installConsoleSanitizer } = require('./src/logSanitizer');
 const { validateRuntimeConfig } = require('./src/runtimeConfig');
 const { isActiveTokenFilename } = require('./src/tokenFiles');
 const { uploadAuthFile } = require('./src/cpaUploader');
+const { resolveTargetCount } = require('./src/targetCount');
+const { maskEmailForLog } = require('./src/logSanitizer');
 
 installConsoleSanitizer(config);
 
 // 目标生成数量
-const TARGET_COUNT = parseInt(process.argv[2], 10) || 1;
+const TARGET_COUNT = resolveTargetCount(process.argv);
 
 function isMissionAccomplishedUrl(url) {
     return typeof url === 'string'
@@ -211,6 +213,7 @@ async function runSingleRegistration() {
         
         // 1. 生成邮箱别名
         await emailProvider.generateAlias();
+        console.log(`[主程序] 当前注册邮箱: ${maskEmailForLog(emailProvider.getEmail())}`);
         
         // 2. 第一阶段：ChatGPT 注册
         await phase1(emailProvider, browserbase, userData);

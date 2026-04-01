@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { sanitizeForLog } = require('../src/logSanitizer');
+const { maskEmailForLog, sanitizeForLog } = require('../src/logSanitizer');
 
 test('redacts configured secrets from log output', () => {
     const raw = 'Authorization: Bearer example-cpa-key DDG=example-ddg-token';
@@ -33,4 +33,28 @@ test('redacts OAuth callback codes from log output', () => {
 
     assert.doesNotMatch(sanitized, /secret-auth-code/);
     assert.match(sanitized, /code=\[REDACTED]/);
+});
+
+test('masks email addresses while preserving domain visibility', () => {
+    assert.equal(
+        maskEmailForLog('eureka.lin@example.com'),
+        'eur***@example.com'
+    );
+    assert.equal(
+        maskEmailForLog('ab@example.com'),
+        'a***@example.com'
+    );
+});
+
+test('sanitizes email addresses embedded in log messages', () => {
+    const sanitized = sanitizeForLog(
+        '[Email] 当前注册邮箱: eureka.lin@example.com',
+        {}
+    );
+
+    assert.equal(
+        sanitized,
+        '[Email] 当前注册邮箱: eur***@example.com'
+    );
+    assert.doesNotMatch(sanitized, /eureka\.lin@example\.com/);
 });
