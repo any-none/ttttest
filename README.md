@@ -97,6 +97,7 @@ npm install
 - `ALIAS_EMAIL_ENABLED`
 - `ALIAS_EMAIL_DOMAIN`
 - `REGISTRATION_TARGETS_JSON`
+- `REGISTRATION_TARGET_COUNT`
 - `OAUTH_CLIENT_ID`
 - `OAUTH_REDIRECT_PORT`
 
@@ -261,6 +262,7 @@ node index.js 10 gamil
 - workflow 默认模式已经改为 `gmail`
 - workflow 默认注册数量已经改为 `50`
 - workflow 会优先读取 `REGISTRATION_TARGETS_JSON`，并按目标数量自动展开 matrix 并发
+- workflow 的并发数量由 `REGISTRATION_TARGET_COUNT` 控制，这个值应当与 `REGISTRATION_TARGETS_JSON` 中的配置套数保持一致
 - 手动触发时也可以覆盖默认输入，例如把模式切回 `default`
 - 如果没有配置 `REGISTRATION_TARGETS_JSON`，则会退回到单套 `GMAIL_EMAIL` / `MAIL_INBOX_URL` 的旧模式
 
@@ -349,7 +351,7 @@ Browserbase 服务使用的是公开的 Gemini 浏览器服务，如果连接失
 - 当前默认值：`count=50`、`mode=gmail`
 - 当配置了 `REGISTRATION_TARGETS_JSON` 时，workflow 会自动生成 matrix 并发
 
-在 GitHub 仓库中配置以下 Secrets 后，可手动触发真实注册：
+在 GitHub 仓库中配置以下 Secrets / Variables 后，可手动触发真实注册：
 
 - `DDG_TOKEN`
 - `GMAIL_EMAIL`
@@ -357,6 +359,7 @@ Browserbase 服务使用的是公开的 Gemini 浏览器服务，如果连接失
 - `REGISTRATION_TARGETS_JSON`
 - `CPA_URL`
 - `CPA_KEY`
+- `REGISTRATION_TARGET_COUNT`
 
 ## 许可证
 

@@ -5,6 +5,7 @@ const {
     buildRegistrationMatrix,
     getRegistrationTarget,
     resolveRegistrationTargets,
+    resolveRegistrationTargetCount,
     validateRegistrationTarget,
 } = require('../src/registrationTargets');
 
@@ -175,4 +176,33 @@ test('validates required fields for gmail mode', () => {
             { emailMode: 'gmail', targetIndex: 0 }
         );
     }, /mailInboxUrl/);
+});
+
+test('prefers REGISTRATION_TARGET_COUNT when provided', () => {
+    const targetCount = resolveRegistrationTargetCount(
+        {
+            registrationTargets: [
+                { gmailEmail: 'config@example.com', mailInboxUrl: 'https://config.example.com' }
+            ]
+        },
+        {
+            REGISTRATION_TARGET_COUNT: '5'
+        }
+    );
+
+    assert.equal(targetCount, 5);
+});
+
+test('falls back to configured target count when REGISTRATION_TARGET_COUNT is absent', () => {
+    const targetCount = resolveRegistrationTargetCount(
+        {
+            registrationTargets: [
+                { gmailEmail: 'one@example.com', mailInboxUrl: 'https://one.example.com' },
+                { gmailEmail: 'two@example.com', mailInboxUrl: 'https://two.example.com' }
+            ]
+        },
+        {}
+    );
+
+    assert.equal(targetCount, 2);
 });

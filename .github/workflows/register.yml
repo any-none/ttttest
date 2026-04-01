@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      REGISTRATION_TARGET_COUNT: ${{ vars.REGISTRATION_TARGET_COUNT }}
     outputs:
       matrix: ${{ steps.prepare.outputs.matrix }}
       target_count: ${{ steps.prepare.outputs.target_count }}
@@ -30,17 +32,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Materialize registration targets
-        env:
-          REGISTRATION_TARGETS_JSON: ${{ secrets.REGISTRATION_TARGETS_JSON }}
-          GMAIL_EMAIL: ${{ secrets.GMAIL_EMAIL }}
-          MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
-        run: node scripts/materialize-registration-targets.js .codex-runtime/registration-targets.json
-
       - name: Prepare registration matrix
         id: prepare
-        env:
-          REGISTRATION_TARGETS_FILE: .codex-runtime/registration-targets.json
         run: node scripts/build-action-matrix.js "${{ inputs.count }}" "${{ inputs.mode }}"
 
   register:

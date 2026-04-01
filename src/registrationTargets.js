@@ -36,6 +36,20 @@ function parseRegistrationTargetsFile(filePath) {
     return parseRegistrationTargetsJson(fs.readFileSync(filePath, 'utf8'));
 }
 
+function resolveRegistrationTargetCount(config = {}, env = process.env) {
+    const configuredCount = parseInt(env.REGISTRATION_TARGET_COUNT, 10);
+    if (Number.isInteger(configuredCount) && configuredCount > 0) {
+        return configuredCount;
+    }
+
+    const normalizedTargets = normalizeRegistrationTargets(config.registrationTargets);
+    if (normalizedTargets.length > 0) {
+        return normalizedTargets.length;
+    }
+
+    return resolveRegistrationTargets(config, env).length;
+}
+
 function resolveRegistrationTargets(config = {}, env = process.env) {
     if (env.REGISTRATION_TARGETS_JSON) {
         return parseRegistrationTargetsJson(env.REGISTRATION_TARGETS_JSON);
@@ -121,6 +135,7 @@ module.exports = {
     normalizeRegistrationTargets,
     parseRegistrationTargetsFile,
     parseRegistrationTargetsJson,
+    resolveRegistrationTargetCount,
     resolveRegistrationTargets,
     validateRegistrationTarget,
 };

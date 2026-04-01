@@ -4,8 +4,7 @@ const config = require('../src/config');
 const { normalizeEmailMode } = require('../src/emailMode');
 const {
     buildRegistrationMatrix,
-    resolveRegistrationTargets,
-    validateRegistrationTarget,
+    resolveRegistrationTargetCount,
 } = require('../src/registrationTargets');
 const { resolveTargetCount } = require('../src/targetCount');
 
@@ -20,30 +19,26 @@ function appendOutput(name, value) {
 
 function main() {
     const totalCount = resolveTargetCount(['node', 'build-action-matrix', process.argv[2]]);
-    const emailMode = normalizeEmailMode(process.argv[3]);
-    const targets = resolveRegistrationTargets(config, process.env);
+    normalizeEmailMode(process.argv[3]);
+    const targetCount = resolveRegistrationTargetCount(config, process.env);
 
-    if (!targets.length) {
-        throw new Error('No registration targets configured. Set REGISTRATION_TARGETS_JSON or legacy GMAIL_EMAIL/MAIL_INBOX_URL secrets.');
+    if (targetCount <= 0) {
+        throw new Error('No registration targets configured. Set REGISTRATION_TARGET_COUNT or provide configured targets.');
     }
 
-    targets.forEach((target, index) => {
-        validateRegistrationTarget(target, {
-            emailMode,
-            targetIndex: index,
-        });
-    });
-
-    const matrix = buildRegistrationMatrix(totalCount, targets);
+    const matrix = buildRegistrationMatrix(
+        totalCount,
+        Array.from({ length: targetCount }, () => ({}))
+    );
     if (!matrix.include.length) {
         throw new Error(`No registration jobs were generated for total count ${totalCount}.`);
     }
 
     appendOutput('matrix', JSON.stringify(matrix));
-    appendOutput('target_count', String(targets.length));
+    appendOutput('target_count', String(targetCount));
     appendOutput('job_count', String(matrix.include.length));
 
-    console.log(`[Matrix] Prepared ${matrix.include.length} job(s) from ${targets.length} configured target(s), total count ${totalCount}.`);
+    console.log(`[Matrix] Prepared ${matrix.include.length} job(s) from ${targetCount} configured target(s), total count ${totalCount}.`);
 }
 
 try {
