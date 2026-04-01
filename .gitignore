@@ -1,0 +1,10 @@
+node_modules/
+tokens/
+.DS_Store
+.env
+.env.*
+*.log
+task_plan.md
+findings.md
+progress.md
+docs/superpowers/

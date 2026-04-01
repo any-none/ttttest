@@ -1,0 +1,57 @@
+name: Manual Register
+
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: Number of accounts to register
+        required: true
+        default: "1"
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DDG_TOKEN: ${{ secrets.DDG_TOKEN }}
+      MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
+      CPA_URL: ${{ secrets.CPA_URL }}
+      CPA_KEY: ${{ secrets.CPA_KEY }}
+      ALIAS_EMAIL_ENABLED: "true"
+      ALIAS_EMAIL_DOMAIN: "lllooolll.aleeas.com"
+      OAUTH_CLIENT_ID: "app_EMoamEEZ73f0CkXaXp7hrann"
+      OAUTH_REDIRECT_PORT: "1455"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Mask secrets
+        shell: bash
+        run: |
+          echo "::add-mask::${DDG_TOKEN}"
+          echo "::add-mask::${MAIL_INBOX_URL}"
+          echo "::add-mask::${CPA_URL}"
+          echo "::add-mask::${CPA_KEY}"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          test -n "${MAIL_INBOX_URL}" || { echo "MAIL_INBOX_URL is required"; exit 1; }
+          test -n "${CPA_URL}" || { echo "CPA_URL is required"; exit 1; }
+          test -n "${CPA_KEY}" || { echo "CPA_KEY is required"; exit 1; }
+
+      - name: Register And Upload
+        run: node index.js "${{ inputs.count }}"
