@@ -18,8 +18,6 @@ jobs:
       MAIL_INBOX_URL: ${{ secrets.MAIL_INBOX_URL }}
       CPA_URL: ${{ secrets.CPA_URL }}
       CPA_KEY: ${{ secrets.CPA_KEY }}
-      ALIAS_EMAIL_ENABLED: "true"
-      ALIAS_EMAIL_DOMAIN: "lllooolll.aleeas.com"
       OAUTH_CLIENT_ID: "app_EMoamEEZ73f0CkXaXp7hrann"
       OAUTH_REDIRECT_PORT: "1455"
     steps:

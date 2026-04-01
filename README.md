@@ -35,7 +35,7 @@ npm install
   "mailInboxUrl": "",
   "oauthClientId": "app_EMoamEEZ73f0CkXaXp7hrann",
   "oauthRedirectPort": 1455,
-  "aliasEmailEnabled": true,
+  "aliasEmailEnabled": false,
   "aliasEmailDomain": "lllooolll.aleeas.com",
   "cpaUrl": "",
   "cpaKey": ""

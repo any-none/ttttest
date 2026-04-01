@@ -38,7 +38,7 @@ test('falls back to config file values when environment variables are absent', (
             mailInboxUrl: 'https://file.example.com',
             cpaUrl: 'https://file-cpa.example.com',
             cpaKey: 'file-cpa-key',
-            aliasEmailEnabled: true,
+            aliasEmailEnabled: false,
             aliasEmailDomain: 'file.example.com'
         },
         {}
@@ -48,6 +48,6 @@ test('falls back to config file values when environment variables are absent', (
     assert.equal(config.mailInboxUrl, 'https://file.example.com');
     assert.equal(config.cpaUrl, 'https://file-cpa.example.com');
     assert.equal(config.cpaKey, 'file-cpa-key');
-    assert.equal(config.aliasEmailEnabled, true);
+    assert.equal(config.aliasEmailEnabled, false);
     assert.equal(config.aliasEmailDomain, 'file.example.com');
 });
