@@ -10,7 +10,7 @@ on:
       mode:
         description: Email mode (default or gmail)
         required: false
-        default: "gmail"
+        default: "default"
 
 jobs:
   prepare-matrix:
@@ -18,7 +18,7 @@ jobs:
     permissions:
       contents: read
     env:
-      REGISTRATION_TARGET_COUNT: ${{ vars.REGISTRATION_TARGET_COUNT }}
+      REGISTRATION_TARGET_COUNT: ${{ vars.REGISTRATION_TARGET_COUNT || secrets.REGISTRATION_TARGET_COUNT }}
     outputs:
       matrix: ${{ steps.prepare.outputs.matrix }}
       target_count: ${{ steps.prepare.outputs.target_count }}

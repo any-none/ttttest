@@ -4,7 +4,7 @@ const GMAIL_EMAIL_MODE = 'gmail';
 function normalizeEmailMode(value) {
     const normalized = String(value ?? '').trim().toLowerCase();
 
-    if (!normalized) {
+    if (!normalized || normalized === DEFAULT_EMAIL_MODE) {
         return DEFAULT_EMAIL_MODE;
     }
 
