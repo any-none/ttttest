@@ -76,6 +76,33 @@ test('falls back to config registration targets when env secret is absent', () =
     });
 });
 
+test('duplicates a legacy inbox target to match REGISTRATION_TARGET_COUNT', () => {
+    const targets = resolveRegistrationTargets(
+        {
+            registrationTargets: []
+        },
+        {
+            MAIL_INBOX_URL: 'https://legacy.example.com',
+            REGISTRATION_TARGET_COUNT: '3'
+        }
+    );
+
+    assert.deepEqual(targets, [
+        {
+            gmailEmail: '',
+            mailInboxUrl: 'https://legacy.example.com'
+        },
+        {
+            gmailEmail: '',
+            mailInboxUrl: 'https://legacy.example.com'
+        },
+        {
+            gmailEmail: '',
+            mailInboxUrl: 'https://legacy.example.com'
+        }
+    ]);
+});
+
 test('falls back to a single target built from legacy env vars', () => {
     const targets = resolveRegistrationTargets(
         {

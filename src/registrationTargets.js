@@ -36,6 +36,24 @@ function parseRegistrationTargetsFile(filePath) {
     return parseRegistrationTargetsJson(fs.readFileSync(filePath, 'utf8'));
 }
 
+function buildLegacyRegistrationTargets(env = process.env) {
+    if (!env.GMAIL_EMAIL && !env.MAIL_INBOX_URL) {
+        return [];
+    }
+
+    const configuredCount = parseInt(env.REGISTRATION_TARGET_COUNT, 10);
+    const targetCount = Number.isInteger(configuredCount) && configuredCount > 0
+        ? configuredCount
+        : 1;
+
+    return normalizeRegistrationTargets(
+        Array.from({ length: targetCount }, () => ({
+            gmailEmail: env.GMAIL_EMAIL,
+            mailInboxUrl: env.MAIL_INBOX_URL,
+        }))
+    );
+}
+
 function resolveRegistrationTargetCount(config = {}, env = process.env) {
     const configuredCount = parseInt(env.REGISTRATION_TARGET_COUNT, 10);
     if (Number.isInteger(configuredCount) && configuredCount > 0) {
@@ -59,13 +77,9 @@ function resolveRegistrationTargets(config = {}, env = process.env) {
         return parseRegistrationTargetsFile(env.REGISTRATION_TARGETS_FILE);
     }
 
-    if (env.GMAIL_EMAIL || env.MAIL_INBOX_URL) {
-        return normalizeRegistrationTargets([
-            {
-                gmailEmail: env.GMAIL_EMAIL,
-                mailInboxUrl: env.MAIL_INBOX_URL,
-            }
-        ]);
+    const legacyTargets = buildLegacyRegistrationTargets(env);
+    if (legacyTargets.length > 0) {
+        return legacyTargets;
     }
 
     return normalizeRegistrationTargets(config.registrationTargets);
@@ -129,6 +143,7 @@ function getRegistrationTarget(targets = [], targetIndex = 0) {
 }
 
 module.exports = {
+    buildLegacyRegistrationTargets,
     buildRegistrationMatrix,
     getRegistrationTarget,
     normalizeRegistrationTarget,
